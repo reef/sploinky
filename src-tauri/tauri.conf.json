@@ -1,0 +1,57 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Sploinky",
+  "version": "0.1.0",
+  "identifier": "com.sploinky.app",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Sploinky",
+        "width": 800,
+        "height": 600
+      }
+    ],
+    "security": {
+      "csp": null,
+      "assetProtocol": {
+        "enable": true
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "fileAssociations": [
+      {
+        "name": "Sploinky",
+        "ext": ["md"],
+        "description": "Look at Markdown"
+      }
+    ]
+  },
+  "plugins": {
+    "cli": {
+      "description": "Sploinky, the sploinkest markdown viewer",
+      "args": [
+        {
+          "name": "source",
+          "index": 1,
+          "takesValue": true
+        }
+      ]
+    }
+  }
+}
