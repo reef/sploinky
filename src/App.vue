@@ -7,8 +7,41 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 
-const file = ref("");
-const markdown = ref("");
+interface Tab {
+  path: string;
+  content: string;
+}
+
+const activeTab = ref<Tab | null>();
+const tabs = ref<Tab[]>([]);
+
+const recent = ref<string[]>([]);
+const history = localStorage.getItem("recent");
+if (history) {
+  try {
+    const paths = JSON.parse(history);
+    if (Array.isArray(paths)) recent.value = paths;
+  } catch {}
+}
+
+function addRecent(path: string) {
+  recent.value = [path, ...recent.value.filter((p) => p !== path).slice(0, 9)];
+  localStorage.setItem("recent", JSON.stringify(recent.value));
+}
+
+async function changeTab(tab: Tab) {
+  activeTab.value = tab;
+}
+
+async function closeTab(tab: Tab) {
+  const i = tabs.value.indexOf(tab);
+  tabs.value = [...tabs.value.slice(0, i), ...tabs.value.slice(i + 1)];
+  activeTab.value = tabs.value[Math.max(0, i - 1)] ?? null;
+}
+
+async function reloadTab(tab: Tab) {
+  void loadFile(tab.path);
+}
 
 listen("prep", () => {});
 
@@ -21,14 +54,20 @@ async function loadFile(path: string) {
     const content = await readTextFile(path, {
       baseDir: BaseDirectory.Home,
     });
-    file.value = path;
-    markdown.value = content;
+    let existingTab = tabs.value.find((t) => t.path === path);
+    if (existingTab) {
+      existingTab.content = content;
+      activeTab.value = existingTab;
+    } else {
+      const tab: Tab = {
+        path,
+        content,
+      };
+      activeTab.value = tab;
+      tabs.value = [...tabs.value, tab];
+    }
+    addRecent(path);
   }
-}
-
-function closeFile() {
-  file.value = "";
-  markdown.value = "";
 }
 
 async function openFile() {
@@ -82,14 +121,32 @@ document.body.addEventListener(
 <template>
   <div class="container">
     <header>
-      <button @click="openFile()">Open</button>
-      <button @click="closeFile()">Close</button>
-      <code>{{ file }}</code>
+      <div class="file-controls">
+        <button @click="openFile()">Open</button>
+        <code class="header-path">{{ activeTab?.path }}</code>
+        <div v-if="activeTab">
+          <button @click="reloadTab(activeTab)">⟳</button>
+          <button @click="closeTab(activeTab)">✕</button>
+        </div>
+      </div>
+      <div class="tab-container">
+        <div
+          class="tab"
+          :class="{ selected: tab === activeTab }"
+          v-for="tab in tabs"
+          @click="changeTab(tab)"
+        >
+          {{ tab.path.split("/").slice(-1)[0] }}
+        </div>
+      </div>
     </header>
     <main>
-      <vue-markdown :source="markdown" v-if="markdown" />
+      <vue-markdown :source="activeTab.content" v-if="activeTab" />
       <div v-else>
         <h3>Open up a Markdown file using the button above</h3>
+        <div v-for="path in recent">
+          <button @click="loadFile(path)">{{ path }}</button>
+        </div>
       </div>
     </main>
   </div>
@@ -127,9 +184,19 @@ body {
 }
 
 header {
-  padding: 4px;
   background: #cec7d2;
   font-size: 0.8em;
+}
+
+.header-path {
+  flex-grow: 1;
+  flex-shrink: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-controls {
+  padding: 4px;
   display: flex;
   align-items: center;
   position: sticky;
@@ -186,6 +253,28 @@ button:active {
 
 button + * {
   margin-left: 4px;
+}
+
+.tab-container {
+  display: flex;
+  overflow: auto;
+  scrollbar-width: none;
+}
+
+.tab {
+  padding: 2px 8px;
+  min-width: 40px;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tab:hover {
+  background: #8888;
+}
+
+.tab.selected {
+  background: #8884;
 }
 
 @media (prefers-color-scheme: dark) {

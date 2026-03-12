@@ -1,7 +1,13 @@
 {
   "identifier": "desktop-capability",
-  "platforms": ["macOS", "windows", "linux"],
-  "windows": ["main"],
+  "platforms": [
+    "macOS",
+    "windows",
+    "linux"
+  ],
+  "windows": [
+    "main"
+  ],
   "permissions": [
     "cli:default",
     "fs:default",
@@ -14,9 +20,12 @@
     "fs:read-dirs",
     {
       "identifier": "fs:scope",
-      "allow": ["**/*"]
+      "allow": [
+        "**/*"
+      ]
     },
     "dialog:default",
-    "shell:default"
+    "shell:default",
+    "window-state:default"
   ]
 }
