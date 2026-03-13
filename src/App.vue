@@ -144,7 +144,7 @@ window.addEventListener("wheel", (ev: WheelEvent) => {
   if (ev.ctrlKey) {
     ev.preventDefault();
     ev.stopPropagation();
-    if (ev.deltaY < 0) zoomLess(0.95);
+    if (ev.deltaY > 0) zoomLess(0.95);
     else zoomMore(1.1);
   }
 });
