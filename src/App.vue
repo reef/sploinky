@@ -17,6 +17,9 @@ const tabs = ref<Tab[]>([]);
 
 const recent = ref<string[]>([]);
 const history = localStorage.getItem("recent");
+
+const zoom = ref(1);
+
 if (history) {
   try {
     const paths = JSON.parse(history);
@@ -116,6 +119,35 @@ document.body.addEventListener(
   },
   true,
 );
+
+function zoomLess(val = 0.9) {
+  zoom.value = Math.max(0.5, zoom.value * val);
+}
+
+function zoomMore(val = 1.2) {
+  zoom.value = Math.min(3, zoom.value * val);
+}
+
+function zoomNone() {
+  zoom.value = 1;
+}
+
+window.addEventListener("keydown", (ev: KeyboardEvent) => {
+  if (ev.ctrlKey) {
+    if (ev.key === "-") zoomLess();
+    if (ev.key === "+") zoomMore();
+    if (ev.key === "0") zoomNone();
+  }
+});
+
+window.addEventListener("wheel", (ev: WheelEvent) => {
+  if (ev.ctrlKey) {
+    ev.preventDefault();
+    ev.stopPropagation();
+    if (ev.deltaY < 0) zoomLess(0.95);
+    else zoomMore(1.1);
+  }
+});
 </script>
 
 <template>
@@ -140,7 +172,12 @@ document.body.addEventListener(
         </div>
       </div>
     </header>
-    <main>
+    <main :style="{ zoom: `${zoom * 100}%`, lineHeight: '1.3em' }">
+      <div class="floaty-btns">
+        <button @click="zoomLess()">-</button>
+        <button @click="zoomNone()">↺</button>
+        <button @click="zoomMore()">+</button>
+      </div>
       <vue-markdown :source="activeTab.content" v-if="activeTab" />
       <div v-else>
         <h3>Open up a Markdown file using the button above</h3>
@@ -188,6 +225,30 @@ header {
   font-size: 0.8em;
 }
 
+.floaty-btns {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+}
+
+.floaty-btns button {
+  font-size: 0.8em;
+  aspect-ratio: 1;
+  height: 24px;
+}
+
+.floaty-btns button:has(+ button) {
+  border-bottom-right-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.floaty-btns button + button {
+  border-bottom-left-radius: 0;
+  border-top-left-radius: 0;
+  margin-left: 0;
+}
+
 .header-path {
   flex-grow: 1;
   flex-shrink: 1;
@@ -208,6 +269,7 @@ main {
   padding: 8px;
   overflow: auto;
   max-height: 100%;
+  position: relative;
 }
 
 code {
